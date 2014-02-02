@@ -43,7 +43,7 @@ namespace worldlib
 			}
 
 			// Set up the white colors
-			for (int i = 0; i < 0x08; i++) palettes[i+0][1] = 0xFFE8F0F8;		// Why this is a different color I'll never know...
+			for (int i = 0; i < 0x08; i++) palettes[i+0][1] = 0xFFE8F0F8;
 			for (int i = 0; i < 0x08; i++) palettes[i+8][1] = 0xFFF8F8F8;
 
 
