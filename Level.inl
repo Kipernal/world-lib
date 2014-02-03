@@ -6,21 +6,6 @@ namespace worldlib
 	namespace internal
 	{
 
-		std::uint32_t SFCToARGB(std::uint16_t color)
-		{
-			int a = 0xFF;
-			int r = (color >> 0x00) & 0x1F;
-			int g = (color >> 0x05) & 0x1F;
-			int b = (color >> 0x0A) & 0x1F;
-
-			r *= 8;
-			g *= 8;
-			b *= 8;
-
-			int result = (a << 24) | (r << 16) | (g << 8) | (b << 0);
-			return result;
-		}
-
 		// Returns the level's "standard" palette, regardless of its override settings.
 		template <typename inputIteratorType, typename outputIteratorType>
 		outputIteratorType getLevelStandardPalette(inputIteratorType romStart, inputIteratorType romEnd, outputIteratorType out, int level)
@@ -133,15 +118,15 @@ namespace worldlib
 	template <typename inputIteratorType>
 	std::uint32_t getLevelBackgroundColor(inputIteratorType romStart, inputIteratorType romEnd, int level)
 	{
-		if (internal::readTrivigintetSFC(customPalettePointerTableLocation + level * 3) == 0)
+		if (internal::readTrivigintetSFC(romStart, romEnd, internal::customPalettePointerTableLocation + level * 3) == 0)
 		{
 			auto byte = internal::getLevelHeaderByte(romStart, romEnd, level, 2);
 			internal::getBits(byte, 0xE0);
-			return SFCToARGB(internal::readWordSFC(romStart, romEnd, sharedBackgroundColorsLocation + byte));
+			return SFCToARGB(internal::readWordSFC(romStart, romEnd, internal::sharedBackgroundColorsLocation + byte));
 		}
 		else
 		{
-			auto address = internal::readTrivigintetSFC(customPalettePointerTableLocation + level * 3);
+			auto address = internal::readTrivigintetSFC(romStart, romEnd, internal::customPalettePointerTableLocation + level * 3);
 			if (address == 0) throw std::runtime_error("Tried to get the custom palette of a level that has none!");
 
 			return SFCToARGB(internal::readWordSFC(romStart, romEnd, address));
@@ -154,7 +139,7 @@ namespace worldlib
 	{
 		getLevelBackgroundGraphicsSlots(romStart, romEnd, out, level);
 		getLevelSpriteGraphicsSlots(romStart, romEnd, out, level);
-		*(out++) = getLevelAnimatedTileAreaSlot(romStart, romEnd, level);
+		*(out++) = getLevelAnimatedTileAreaGraphicsSlot(romStart, romEnd, level);
 		return out;
 	}
 
@@ -214,7 +199,7 @@ namespace worldlib
 	}
 
 	template <typename inputIteratorType>
-	std::uint16_t getLevelAnimatedTileAreaSlot(inputIteratorType romStart, inputIteratorType romEnd, int level)
+	std::uint16_t getLevelAnimatedTileAreaGraphicsSlot(inputIteratorType romStart, inputIteratorType romEnd, int level)
 	{
 		int address = internal::readTrivigintetSFC(romStart, romEnd, internal::exgfxBypassListPointerToPointerTable) + internal::exgfxBypassOffset + level * 0x20;
 		bool usesExGFX = (internal::readByteSFC(romStart, romEnd, address + 1) & 0x80) == 0x80;
@@ -513,5 +498,11 @@ namespace worldlib
 	outputIteratorType indexedImageToBitmap(graphicsInputIteratorType graphicsFileStart, graphicsInputIteratorType graphicsFileEnd, paletteInputIteratorType paletteStart, paletteInputIteratorType paletteEnd, int tilesInOneRow, int bpp, int paletteNumber, outputIteratorType out, int *resultingWidth, int *resultingHeight)
 	{
 		return indexedImageToBitmap(graphicsFileStart, graphicsFileEnd, paletteStart, paletteEnd, tilesInOneRow, bpp, 0, 0, -1, -1, false, false, paletteNumber, out, resultingWidth, resultingHeight);
+	}
+
+	template <typename graphicsInputIteratorType, typename paletteInputIteratorType, typename outputIteratorType>
+	outputIteratorType indexedImageToBitmap(graphicsInputIteratorType graphicsFileStart, graphicsInputIteratorType graphicsFileEnd, paletteInputIteratorType paletteStart, paletteInputIteratorType paletteEnd, int bpp, int paletteNumber, outputIteratorType out, int *resultingWidth, int *resultingHeight)
+	{
+		return indexedImageToBitmap(graphicsFileStart, graphicsFileEnd, paletteStart, paletteEnd, 0x10, bpp, paletteNumber, out, resultingWidth, resultingHeight);
 	}
 }

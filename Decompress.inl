@@ -41,7 +41,7 @@ outputIteratorType decompressLZ2(inputIteratorType start, inputIteratorType end,
 	};
 	
 	// Used internally.  On success out is modified.
-	std::vector<typename inputIteratorType::value_type> resultBuffer;
+	std::vector<typename std::iterator_traits<inputIteratorType>::value_type> resultBuffer;
 
 
 	if (compressedSize != nullptr)
@@ -164,7 +164,7 @@ outputIteratorType decompressLZ3(inputIteratorType start, inputIteratorType end,
 	};
 
 	// Used internally.  On success out is modified.
-	std::vector<typename inputIteratorType::value_type> resultBuffer;
+	std::vector<typename std::iterator_traits<inputIteratorType>::value_type> resultBuffer;
 
 	if (compressedSize != nullptr)
 		*compressedSize = 0;

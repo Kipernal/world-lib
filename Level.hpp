@@ -41,7 +41,7 @@ namespace worldlib
 
 	// Returns the specified level's animated tile area graphics slot.  Keep in mind that animated graphics files can be more than 4kb!
 	template <typename inputIteratorType>
-	std::uint16_t getLevelAnimatedTileAreaSlot(inputIteratorType romStart, inputIteratorType romEnd, int level);
+	std::uint16_t getLevelAnimatedTileAreaGraphicsSlot(inputIteratorType romStart, inputIteratorType romEnd, int level);
 
 	// Returns the specified level's specified graphics slot (in the order of getLevelGraphicsSlots).
 	template <typename inputIteratorType>
@@ -75,6 +75,9 @@ namespace worldlib
 	template <typename graphicsInputIteratorType, typename paletteInputIteratorType, typename outputIteratorType>
 	outputIteratorType indexedImageToBitmap(graphicsInputIteratorType graphicsFileStart, graphicsInputIteratorType graphicsFileEnd, paletteInputIteratorType paletteStart, paletteInputIteratorType paletteEnd, int tilesInOneRow, int bpp, int x, int y, int width, int height, bool flipX, bool flipY, int paletteNumber, outputIteratorType out, int *resultingWidth = nullptr, int *resultingHeight = nullptr);
 
+	// Simpler version of the above that assumes some defaults.
+	template <typename graphicsInputIteratorType, typename paletteInputIteratorType, typename outputIteratorType>
+	outputIteratorType indexedImageToBitmap(graphicsInputIteratorType graphicsFileStart, graphicsInputIteratorType graphicsFileEnd, paletteInputIteratorType paletteStart, paletteInputIteratorType paletteEnd, int bpp, int paletteNumber, outputIteratorType out, int *resultingWidth = nullptr, int *resultingHeight = nullptr);
 
 
 

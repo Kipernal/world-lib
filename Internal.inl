@@ -100,7 +100,7 @@ namespace worldlib
 			return integer;
 		}
 
-		std::uint8_t reverseBits(std::uint8_t byte)
+		inline std::uint8_t reverseBits(std::uint8_t byte)
 		{
 			return static_cast<std::uint8_t>(((byte * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32);
 		}

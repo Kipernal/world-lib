@@ -43,7 +43,7 @@ namespace worldlib
 		return addr;
 	}
 
-	std::uint32_t SFCToARGB(std::uint16_t color)
+	inline std::uint32_t SFCToARGB(std::uint16_t color)
 	{
 		int a = 0xFF;
 		int r = (color >> 0x00) & 0x1F;
