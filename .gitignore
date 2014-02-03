@@ -1,6 +1,6 @@
 *.vcsproj
-*vcsproj.filters
-*vcsproj.user
+*.vcsproj.filters
+*.vcsproj.user
 Debug
 Release
 

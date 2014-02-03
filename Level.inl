@@ -112,7 +112,8 @@ namespace worldlib
 
 			for (int i = 0; i < 512; i+=2)
 			{
-				*(out++) = SFCToARGB(internal::readWordSFC(romStart, romEnd, address + i * 2));
+				auto color = internal::readWordSFC(romStart, romEnd, address + i);
+				*(out++) = SFCToARGB(color);
 			}
 
 			return out;
@@ -229,16 +230,15 @@ namespace worldlib
 
 
 	template <typename inputIteratorType>
-	std::uint16_t getLevelSingleGraphicsSlot(inputIteratorType romStart, inputIteratorType romEnd, int level, int slotToGet)
+	std::uint16_t getLevelSingleGraphicsSlot(inputIteratorType romStart, inputIteratorType romEnd, int level, ExgfxSlots slotToGet)
 	{
 		std::vector<std::uint16_t> slots;
 		getLevelGraphicsSlots(romStart, romEnd, std::back_inserter(slots), level);
-		return slots[slotToGet];
+		return slots[(int)slotToGet];
 	}
 
-
-	template <typename inputIteratorType, typename outputIteratorType>
-	outputIteratorType decompressGraphicsFile(inputIteratorType romStart, inputIteratorType romEnd, outputIteratorType out, int file, int *compressedSize, int *decompressedSize)
+	template <typename inputIteratorType>
+	int getAddressOfGraphicsFile(inputIteratorType romStart, inputIteratorType romEnd, int file)
 	{
 		int address = 0;
 		if (file >= 0 && file <= 0x31)
@@ -248,22 +248,270 @@ namespace worldlib
 		else if (file >= 0x100 && file <= 0xFFF)
 			address = internal::readTrivigintetSFC(romStart, romEnd, internal::readTrivigintetSFC(romStart, romEnd, internal::superExGFXPointerToPointerTableLocation) + (file - 0x100) * 3);
 		else if (file == 0x7F)
-			return out;
+			return -1;
 		else
 			throw std::runtime_error("ExGFX file is not valid.");
 
-		if (address == 0 || address == 0xFFFFFF) 
+		if (address == 0 || address == 0xFFFFFF)
 			throw std::runtime_error("ExGFX file does not exist.");
 
-		std::advance(romStart, SFCToPC(romStart, romEnd, address));
+		return address;
+	}
+
+	template <typename inputIteratorType>
+	bool romContainsGraphicsFile(inputIteratorType romStart, inputIteratorType romEnd, int file)
+	{
+		int address = 0;
+		if (file >= 0 && file <= 0x31)
+			address = internal::readByteSFC(romStart, romEnd, internal::originalGraphicsFilesLowByteTableLocation + file) | (internal::readByteSFC(romStart, romEnd, internal::originalGraphicsFilesHighByteTableLocation + file) << 8) | (internal::readByteSFC(romStart, romEnd, internal::originalGraphicsFilesBankByteTableLocation + file) << 16);
+		else if (file >= 0x80 && file <= 0xFF)
+			address = internal::readTrivigintetSFC(romStart, romEnd, internal::readTrivigintetSFC(romStart, romEnd, internal::standardExGFXPointerToPointerTableLocation) + (file - 0x80) * 3);
+		else if (file >= 0x100 && file <= 0xFFF)
+			address = internal::readTrivigintetSFC(romStart, romEnd, internal::readTrivigintetSFC(romStart, romEnd, internal::superExGFXPointerToPointerTableLocation) + (file - 0x100) * 3);
+		else if (file == 0x7F)
+			return true;
+		else
+			return false;
+
+		if (address == 0 || address == 0xFFFFFF)
+			return false;
+
+		return true;
+	}
+
+	template <typename inputIteratorType, typename outputIteratorType>
+	outputIteratorType decompressGraphicsFile(inputIteratorType romStart, inputIteratorType romEnd, outputIteratorType out, int file, int *compressedSize, int *decompressedSize)
+	{
+		int address = getAddressOfGraphicsFile(romStart, romEnd, file);
+		if (address == -1) return out;
 
 		auto compressionType = internal::readByteSFC(romStart, romEnd, internal::decompressionTypeLocation);
 
+		auto graphicsLocation = romStart;
+
+		std::advance(graphicsLocation, SFCToPC(romStart, romEnd, address));
+
 		if (compressionType == 0 || compressionType == 1)
-			return decompressLZ2(romStart, romEnd, out, compressedSize, decompressedSize);
+			return decompressLZ2(graphicsLocation, romEnd, out, compressedSize, decompressedSize);
 		else if (compressionType == 2)
-			return decompressLZ2(romStart, romEnd, out, compressedSize, decompressedSize);
+			return decompressLZ3(graphicsLocation, romEnd, out, compressedSize, decompressedSize);
 		else
 			throw std::runtime_error("Unrecognized compression format.");
+	}
+
+
+
+
+	template <typename graphicsInputIteratorType, typename paletteInputIteratorType, typename outputIteratorType>
+	outputIteratorType indexedImageToBitmap(graphicsInputIteratorType graphicsStart, graphicsInputIteratorType graphicsEnd, paletteInputIteratorType paletteStart, paletteInputIteratorType paletteEnd, int bpp, bool flipX, bool flipY, int paletteNumber, outputIteratorType out)
+	{
+		auto current = graphicsStart;
+		auto byteCount = std::distance(graphicsStart, graphicsEnd);
+		int bytesPerTile = 8 * bpp;
+		int height = 8;
+		int width = byteCount / bytesPerTile;
+		if (byteCount % bytesPerTile != 0) width++;
+		width *= 8;
+		
+		int rowToUse[64] =  { 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7,
+				        0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7,
+					0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7,
+					0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7 };
+		int planeToUse[64] =  { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
+					2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3,
+					4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 
+					6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7 };
+
+		int colorsPerBPP[] = { 0, 2, 4, 8, 16, 32, 64, 128, 256 };		// How many colors we have access to per bpp value.
+
+
+		int maxTableValue = 0;
+		if (bpp == 8)		maxTableValue = 0x3F;
+		else if (bpp == 4)	maxTableValue = 0x1F;
+		else			maxTableValue = 0x0F;
+
+		std::vector<std::uint64_t> currentTile(8);					// Holds 8 64-bit integers.  Every 8 bits is the color for that column and row of the tile.
+												// Ex: currentTile[0] contains the colors for row 0.
+
+		std::vector<std::uint64_t> allTiles;						// Holds all the tiles we've completed so far.  Same format as above, so every 8 entries is a tile.
+		
+		int i = 0;
+		while (current < graphicsEnd)
+		{
+			if (currentTile.size() == 0) currentTile.resize(8);
+
+			auto byte = *current;
+			auto exploded = internal::explodeInt(internal::explodeInt(internal::explodeInt(byte)));	// Get the bits for each color (i.e. explodes the byte so that each bit gets its own byte)
+			
+			if (flipX)
+				exploded = internal::reverseBits(exploded);
+
+			exploded <<= planeToUse[i & maxTableValue];				// Shift the bits into their correct plane
+			currentTile[rowToUse[i & maxTableValue]] |= exploded;			// And or them to the current value.
+
+			i++;
+			current++;
+
+			if ((i & maxTableValue) == 0)							// If we've completed a tile...
+			{
+				for (auto v : currentTile) allTiles.push_back(v);		// Add it to the list of completed tiles.
+				currentTile.clear();						// And reset the current tile.
+				currentTile.reserve(8);
+			}
+		}
+
+		if (currentTile.size() != 0)							// If we have some leftover data (i.e. there was a tile missing some information)
+		{
+			for (auto v : currentTile) allTiles.push_back(v);			// Add it to the list of completed tiles.  I'll be missing some information, but it's all we can do.
+		}
+
+		
+		std::vector<std::uint32_t> finalResult;
+		finalResult.resize(height * width);
+		i = 0;
+
+		for (auto v : allTiles)
+		{
+			std::uint64_t indixes[8] = {	internal::getBits(v, 0xFF00000000000000),
+							internal::getBits(v, 0x00FF000000000000),
+							internal::getBits(v, 0x0000FF0000000000),
+							internal::getBits(v, 0x000000FF00000000),
+							internal::getBits(v, 0x00000000FF000000),
+							internal::getBits(v, 0x0000000000FF0000),
+							internal::getBits(v, 0x000000000000FF00),
+							internal::getBits(v, 0x00000000000000FF) };
+
+			for (int j = 0; j < 8; j++)
+			{
+				int y = j;
+				if (flipY) y = 7 - j;
+
+				auto colorIterator = paletteStart;
+				std::advance(colorIterator, static_cast<std::uint8_t>(indixes[j]) + colorsPerBPP[bpp] * paletteNumber);
+
+				if (colorIterator >= paletteEnd)
+					throw std::runtime_error("Graphics file contained a color that was out of the range of the palette.");
+
+				auto color = *colorIterator;
+
+				if (indixes[y] == 0)
+					color &= 0x00FFFFFF;				// Make color 0 invisible.
+
+
+				// j = current x position of the current tile.
+				// i = a count of all the rows traversed
+
+				//int y = i & 0x7;
+				//int x = y * 64 + j;
+
+
+				finalResult[i * 8 + y] = color;
+			}
+
+			i++;
+		}
+
+		for (auto v : finalResult)
+			*(out++) = v;
+
+		return out;
+	}
+
+
+	template <typename graphicsInputIteratorType, typename paletteInputIteratorType, typename outputIteratorType>
+	outputIteratorType indexedImageToBitmap(graphicsInputIteratorType graphicsFileStart, graphicsInputIteratorType graphicsFileEnd, paletteInputIteratorType paletteStart, paletteInputIteratorType paletteEnd, int tilesInOneRow, int bpp, int x, int y, int width, int height, bool flipX, bool flipY, int paletteNumber, outputIteratorType out, int *resultingWidth, int *resultingHeight)
+	{
+
+		if (graphicsFileStart == graphicsFileEnd)
+		{
+			if (resultingHeight != nullptr) *resultingHeight = 0;
+			if (resultingWidth != nullptr) *resultingWidth = 0;
+			return out;
+		}
+
+		auto current = graphicsFileStart;
+		int advanceBy[] = { 0, 8, 16, 24, 32, 40, 48, 56, 64 };
+
+		int tileX = 0;
+		int tileY = 0;
+		std::vector<std::vector<std::uint32_t>> entireBitmap(1);
+
+		while (current < graphicsFileEnd)
+		{
+			std::vector<std::uint32_t> thisTile;
+			indexedImageToBitmap(current, current + advanceBy[bpp], paletteStart, paletteEnd, bpp, flipX, flipY, paletteNumber, std::back_inserter(thisTile));
+
+			int subX = 0;
+			int subY = 0;
+			for (auto v : thisTile)
+			{
+				if ((int)entireBitmap.size() <= tileY * 8 + subY)
+					entireBitmap.resize(tileY * 8 + subY + 1); 
+				if ((int)entireBitmap[tileY * 8 + subY].size() <= tileX * 8 + subX)
+					entireBitmap[tileY * 8 + subY].resize(tileX * 8 + subX + 1);
+
+				entireBitmap[tileY * 8 + subY][tileX * 8 + subX] = v;
+
+				subX++;
+				if (subX == 8)
+				{
+					subX = 0;
+					subY++;
+				}
+			}
+
+			tileX++;
+			if (tileX == tilesInOneRow)
+			{
+				tileX = 0;
+				tileY++;
+			}
+
+			current += advanceBy[bpp];
+		}
+
+		unsigned int j, i;
+
+		for (j = 0; j < (unsigned int)height; j++)
+		{
+			for (i = 0; i < (unsigned int)width; i++)
+			{
+				if (j + y >= (int)entireBitmap.size())
+				{
+					if (height != -1) 
+						*(out++) = 0;
+					else
+					{
+						goto finished;				// Break out of the outermost for loop.
+					}
+				}
+				else if (i + x >= (int)entireBitmap[j + y].size())
+				{
+					if (width == -1)				// Only stop early on the first row.  Fill out properly everywhere else
+					{
+						width = i;
+						break;
+					}
+					else
+						*(out++) = 0;
+				}
+				else
+					*(out++) = entireBitmap[j + y][i + x];
+			}
+		}
+
+	finished:
+
+		if (resultingHeight != nullptr) *resultingHeight = j - y;
+		if (resultingWidth != nullptr) *resultingWidth = width - x;
+
+		return out;
+	}
+
+
+	template <typename graphicsInputIteratorType, typename paletteInputIteratorType, typename outputIteratorType>
+	outputIteratorType indexedImageToBitmap(graphicsInputIteratorType graphicsFileStart, graphicsInputIteratorType graphicsFileEnd, paletteInputIteratorType paletteStart, paletteInputIteratorType paletteEnd, int tilesInOneRow, int bpp, int paletteNumber, outputIteratorType out, int *resultingWidth, int *resultingHeight)
+	{
+		return indexedImageToBitmap(graphicsFileStart, graphicsFileEnd, paletteStart, paletteEnd, tilesInOneRow, bpp, 0, 0, -1, -1, false, false, paletteNumber, out, resultingWidth, resultingHeight);
 	}
 }
