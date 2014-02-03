@@ -11,13 +11,25 @@ Also included are graphics decompression routines for the two standard methods S
 
 The library is designed to be simple enough to use but also sufficiently powerful.  Here's a quick example that decompresses level 105's FG1 graphics slot:
 
+<<<<<<< HEAD
 
+=======
+```
+>>>>>>> 13df6907771f9ba881593646a5c0835b3b8ba86b
 std::vector<unsigned char> rom = <code to open the SMW ROM into a vector here>
 std::vector<unsigned char> result;
 
 int graphicsFile = getLevelSingleGraphicsSlot(rom.begin() + 0x200, rom.end(), 0x105, 4);
 // This function returns the graphics file for whatever level you want.
+<<<<<<< HEAD
 // It doesn't matter if the level is using Super Graphics Bypass or not.
+=======
+// Naturally, tt doesn't matter if the level is using Super Graphics 
+// Bypass or not.  There are also functions that return all of a
+// given level's graphics files (FG1, FG2, BG1, etc. through AN2), but
+// that's not as useful here when we only need one.
+
+>>>>>>> 13df6907771f9ba881593646a5c0835b3b8ba86b
 
 decompressGraphicsFile(rom.begin() + 0x200, rom.end(), std::back_inserter(result), graphicsFile);
 // This function decompresses whatever graphics file you ask it to.
@@ -26,4 +38,11 @@ decompressGraphicsFile(rom.begin() + 0x200, rom.end(), std::back_inserter(result
 // the correct tables and such for you based on the file number.
 
 // The decompressed graphics file is stored in "result" thanks to the
+<<<<<<< HEAD
 // std::back_inserter.								
+=======
+// std::back_inserter.  It's still in an indexed format, but because
+// there are routines to get a level's palette as well you can convert
+// it to the image format of your choice easily.
+```
+>>>>>>> 13df6907771f9ba881593646a5c0835b3b8ba86b
