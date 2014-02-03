@@ -1,48 +1,81 @@
 world-lib
 =========
 
-Library for interfacing with Super Mario World ROMs and Lunar Magic's hacks.
+Header-only library for interfacing with Super Mario World ROMs and Lunar Magic's hacks.
 
 The purpose of this library is to provide a generic method for grabbing data from SMW ROMs in a way that makes it easy to create an application that works alongside Lunar Magic.
 
-Includes functions mostly related to level data, for example, getting a level's complete palette, regardless of whether or not its palette is overridden.
+Includes functions mostly related to level data, for example, getting a level's complete palette, regardless of whether or not its palette is bypassed.
 
 Also included are graphics decompression routines for the two standard methods SMW uses to compress graphics.
 
-The library is designed to be simple enough to use but also sufficiently powerful.  Here's a quick example that decompresses level 105's FG1 graphics slot:
+The library is designed to be simple enough to use but also sufficiently powerful.  Here's a quick example that decompresses level 105's sprites graphics slots and saves them to a PNG:
 
-<<<<<<< HEAD
+````C++
+int main(int argc, char* argv[])
+{
+	std::vector<unsigned char> rom;
 
-=======
-```
->>>>>>> 13df6907771f9ba881593646a5c0835b3b8ba86b
-std::vector<unsigned char> rom = <code to open the SMW ROM into a vector here>
-std::vector<unsigned char> result;
+	// Read in the ROM.
+	std::ifstream in("smw.smc", std::ios::in | std::ios::binary);
+	if (in) rom = std::vector<unsigned char>((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+	else return 0;
 
-int graphicsFile = getLevelSingleGraphicsSlot(rom.begin() + 0x200, rom.end(), 0x105, 4);
-// This function returns the graphics file for whatever level you want.
-<<<<<<< HEAD
-// It doesn't matter if the level is using Super Graphics Bypass or not.
-=======
-// Naturally, tt doesn't matter if the level is using Super Graphics 
-// Bypass or not.  There are also functions that return all of a
-// given level's graphics files (FG1, FG2, BG1, etc. through AN2), but
-// that's not as useful here when we only need one.
+	auto romStart = rom.begin() + 0x200;
+	auto romEnd = rom.end();
 
->>>>>>> 13df6907771f9ba881593646a5c0835b3b8ba86b
+	// Get level 105's sprite graphics slots
+	int sp1 = worldlib::getLevelSingleGraphicsSlot(romStart, romEnd, 0x105, worldlib::ExgfxSlots::SP1);
+	int sp2 = worldlib::getLevelSingleGraphicsSlot(romStart, romEnd, 0x105, worldlib::ExgfxSlots::SP2);
+	int sp3 = worldlib::getLevelSingleGraphicsSlot(romStart, romEnd, 0x105, worldlib::ExgfxSlots::SP3);
+	int sp4 = worldlib::getLevelSingleGraphicsSlot(romStart, romEnd, 0x105, worldlib::ExgfxSlots::SP4);
 
-decompressGraphicsFile(rom.begin() + 0x200, rom.end(), std::back_inserter(result), graphicsFile);
-// This function decompresses whatever graphics file you ask it to.
-// There's another function that will decompress any data you want,
-// but this is significantly more convenient as it automatically finds
-// the correct tables and such for you based on the file number.
+	// Get level 105's palette
+	std::vector<std::uint32_t> palette;
+	worldlib::getLevelPalette(romStart, romEnd, std::back_inserter(palette), 0x105);
 
-// The decompressed graphics file is stored in "result" thanks to the
-<<<<<<< HEAD
-// std::back_inserter.								
-=======
-// std::back_inserter.  It's still in an indexed format, but because
-// there are routines to get a level's palette as well you can convert
-// it to the image format of your choice easily.
-```
->>>>>>> 13df6907771f9ba881593646a5c0835b3b8ba86b
+	// Decompress those slots' graphics files
+	std::vector<unsigned char> sp1Chr, sp2Chr, sp3Chr, sp4Chr;
+	worldlib::decompressGraphicsFile(romStart, romEnd, std::back_inserter(sp1Chr), sp1);
+	worldlib::decompressGraphicsFile(romStart, romEnd, std::back_inserter(sp2Chr), sp2);
+	worldlib::decompressGraphicsFile(romStart, romEnd, std::back_inserter(sp3Chr), sp3);
+	worldlib::decompressGraphicsFile(romStart, romEnd, std::back_inserter(sp4Chr), sp4);
+
+
+	// Turn them from indexed, tiled data to normal ARGB bitmaps, and save them all in one bitmap.
+	std::vector<unsigned char> spriteBitmap;
+	int bitmapWidth, bitmapHeight;
+	int totalHeight = 0;
+
+	worldlib::indexedImageToBitmap(sp1Chr.begin(), sp1Chr.end(), palette.begin(), palette.end(), 0x10, 4, 0xA, worldlib::ColorBackInserter(spriteBitmap, worldlib::ColorOrder::RGBA), &bitmapWidth, &bitmapHeight);
+
+	// It looks like a monster function, but that's just because it needs a lot of information about how to render the file.
+	// In order:	the start of the graphics file to decode,
+	//		the end of the graphics file to decode,
+	//		the start of the palette to use,
+	//		the end of the palette to use,
+	//		the number of tiles per row (generally just keep this at 16),
+	//		the bpp (usually 4),
+	//		the numerical palette to use (the one here is the "yellow" sprite palette),
+	//		the iterator to output the data to (this one lets you choose between 8-bit and 32-bit output),
+	//		the place to store the resulting bitmap's width to,
+	//		the place to store the resulting bitmap's height to.
+
+	// If you follow this format, it's pretty straightforward.
+	// There's also another version that just grabs a specific area of the bitmap, and a version that just grabs any number of specific tiles.
+
+  // Now just get the other 3 slots.  Each is appended to spriteBitmap by ColorBackInserter.
+	totalHeight += bitmapHeight;
+	worldlib::indexedImageToBitmap(sp2Chr.begin(), sp2Chr.end(), palette.begin(), palette.end(), 0x10, 4, 0xA, worldlib::ColorBackInserter(spriteBitmap, worldlib::ColorOrder::RGBA), &bitmapWidth, &bitmapHeight);
+	totalHeight += bitmapHeight;
+	worldlib::indexedImageToBitmap(sp3Chr.begin(), sp3Chr.end(), palette.begin(), palette.end(), 0x10, 4, 0xA, worldlib::ColorBackInserter(spriteBitmap, worldlib::ColorOrder::RGBA), &bitmapWidth, &bitmapHeight);
+	totalHeight += bitmapHeight;
+	worldlib::indexedImageToBitmap(sp4Chr.begin(), sp4Chr.end(), palette.begin(), palette.end(), 0x10, 4, 0xA, worldlib::ColorBackInserter(spriteBitmap, worldlib::ColorOrder::RGBA), &bitmapWidth, &bitmapHeight);
+	totalHeight += bitmapHeight;
+
+	// Now you have the image--you can do whatever you want with it.
+	
+  // (This is a separate library, obviously. Just for demonstration.)
+	lodepng::encode("105 sprite graphics.png", spriteBitmap, bitmapWidth, totalHeight);   
+}
+````
