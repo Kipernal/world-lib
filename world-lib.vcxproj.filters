@@ -30,6 +30,9 @@
     <None Include="SFC.inl">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="Patch.inl">
+      <Filter>Header Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Internal.hpp">
@@ -51,6 +54,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ColorBackInserter.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="asardll.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Patch.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

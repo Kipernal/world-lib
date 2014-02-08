@@ -2,6 +2,14 @@
 #include <iterator>
 #include <cstdint>
 
+//////////////////////////////////////////////////////////////////////////////
+/// \file ColorBackInserter.hpp
+/// \brief Contains the definition for a class that deals with a color iterator
+///
+/// \addtogroup Level
+///  @{
+//////////////////////////////////////////////////////////////////////////////
+
 namespace worldlib
 {
 
@@ -9,28 +17,56 @@ namespace worldlib
 
 
 
-	// Iterator-ish thing that behaves like std::back_insert_iterator.
-	// Basically, the = operator takes a full 32-bit color and rearranges it if necessary.
-	// Depending on the iterator type, it will either split up 32-bit colors into their individual components
-	// (in case you need to interface with something that expects a (char *) and don't want to have to
-	// worry about endianness), or just insert it normally.
-	// The "split" behavior occurs only on iterators whose value_type is 8 bits wide, but the colors will always be properly rearranged regardless.
-	// Either way, however, the = operator ALWAYS expects a 32-bit integer in ARGB format.
-
+	////////////////////////////////////////////////////////////
+	/// \brief Iterator that behaves like std::back_insert_iterator.
+	/// Basically, the = operator takes a full 32-bit color and rearranges it as necessary.
+	/// Depending on the iterator type, it will either split up the 32-bit colors into their individual components (in case you need to interface with something that expects a pointer to chars and don't want to have to worry about endianness), or just insert it normally.
+	////////////////////////////////////////////////////////////
 	template<class ContainerType>
 	class ColorBackInserterIterator : std::iterator<std::output_iterator_tag, void, void, void, void>
 	{
 	protected:
+		////////////////////////////////////////////////////////////
+		/// \brief The container this iterator belongs to
+		////////////////////////////////////////////////////////////
 		ContainerType *myContainer;
+
+
+		////////////////////////////////////////////////////////////
+		/// \brief The order incoming colors are put into
+		////////////////////////////////////////////////////////////
 		int colorOrder;
 
 	public:
-		typedef ColorBackInserterIterator<ContainerType> myType;
+
+
+		////////////////////////////////////////////////////////////
+		/// \brief The data type this iterator points to
+		////////////////////////////////////////////////////////////
 		typedef typename ContainerType::value_type typePointedTo;
 
+		////////////////////////////////////////////////////////////
+		/// \brief Creates a ColorBackInsertIterator from the specified container and tells it how to arrange the colors.
+		///
+		///
+		/// \param otherContainer	The container to insert into
+		/// \param order		The order to insert into.  For example, ColorOrder::ARGB.
+		///
+		////////////////////////////////////////////////////////////
 		ColorBackInserterIterator(ContainerType& otherContainer, ColorOrder order) : myContainer(std::addressof(otherContainer)) { colorOrder = (int)order; }
 
-		myType &operator=(std::uint32_t value)
+		////////////////////////////////////////////////////////////
+		/// \brief Inserts the color into the iterator's container.
+		/// \details Automatically converts the color into the format requested when the iterator was constructed.
+		/// If the container contains 8-bit data, then the 32-bit color is split into 4 bytes in the requested order.
+		/// If the container contains 32-bit data, then the data is simply inserted after being rearranged in the requested order.
+		///
+		/// \param value ARGB color value to insert.
+		///
+		/// \return The current structure (*this)
+		///
+		////////////////////////////////////////////////////////////
+		ColorBackInserterIterator<ContainerType> &operator=(std::uint32_t value)
 		{
 			std::uint8_t colors[] = { (value & 0xFF000000) >> 24, (value & 0x00FF0000) >> 16, (value & 0x0000FF00) >> 8, (value & 0x000000FF) >> 0 };
 
@@ -50,24 +86,47 @@ namespace worldlib
 			{
 				myContainer->push_back((slot1 << 24) | (slot2 << 16) | (slot3 << 8) | (slot4 << 0));
 			}
-			return (*this);
+			return *this;
 		}
 
+		////////////////////////////////////////////////////////////
+		/// \brief Does nothing.  As with a normal std::back_insert_iterator, simply exists to satisfy the requirements of an iterator.
+		////////////////////////////////////////////////////////////
+		ColorBackInserterIterator<ContainerType> &operator*() { return (*this); }
 
-		// No-ops only here for the sake of satisfying iterator requirements
-		myType &operator*() { return (*this); }
-		myType &operator++(){ return (*this); }
-		myType operator++(int) { return (*this); }
+		////////////////////////////////////////////////////////////
+		/// \brief Does nothing.  As with a normal std::back_insert_iterator, simply exists to satisfy the requirements of an iterator.
+		////////////////////////////////////////////////////////////
+		ColorBackInserterIterator<ContainerType> &operator++(){ return (*this); }
+
+		////////////////////////////////////////////////////////////
+		/// \brief Does nothing.  As with a normal std::back_insert_iterator, simply exists to satisfy the requirements of an iterator.
+		////////////////////////////////////////////////////////////
+		ColorBackInserterIterator<ContainerType> operator++(int) { return (*this); }
 	};
 
 
-	// Returns a ColorBackInserterIterator.  Convenience function.
+
+	////////////////////////////////////////////////////////////
+	/// \relates ColorBackInserterIterator
+	/// \brief Returns a ColorBackInserterIterator.  
+	/// \details Convenience function in the same vein of std::back_inserter
+	///		
+	/// \param container		The container to insert into.  For example, a std::vector<unsigned char> or a std::vector<std::uint32_t>.
+	/// \param order		The order to insert into.  For example, ColorOrder::ARGB.	
+	///
+	////////////////////////////////////////////////////////////
 	template<class containerType> 
 	inline ColorBackInserterIterator<containerType> ColorBackInserter(containerType &container, ColorOrder order)
 	{
 		return (ColorBackInserterIterator<containerType>(container, order));
 	}
 
+	////////////////////////////////////////////////////////////
+	/// \relates ColorBackInserterIterator
+	/// \brief The order colors are stored in a ColorBackInsertIterator.
+	/// \details Colors specified multiple times (for example, AAAA), will just copy that part.
+	////////////////////////////////////////////////////////////
 	enum class ColorOrder : int
 	{
 		AAAA = 0x00,
@@ -330,265 +389,9 @@ namespace worldlib
 	};
 
 
-	/*
-	// Freakishly huge enum, 99% of which will never be used.
-	enum class ColorOrder : int
-	{
-		AAAA = 0x00,
-		AAAG = 0x01,
-		AAAB = 0x02,
-		AAAR = 0x03,
-		AAGA = 0x04,
-		AAGG = 0x05,
-		AAGB = 0x06,
-		AAGR = 0x07,
-		AABA = 0x08,
-		AABG = 0x09,
-		AABB = 0x0A,
-		AABR = 0x0B,
-		AARA = 0x0C,
-		AARG = 0x0D,
-		AARB = 0x0E,
-		AARR = 0x0F,
-		AGAA = 0x10,
-		AGAG = 0x11,
-		AGAB = 0x12,
-		AGAR = 0x13,
-		AGGA = 0x14,
-		AGGG = 0x15,
-		AGGB = 0x16,
-		AGGR = 0x17,
-		AGBA = 0x18,
-		AGBG = 0x19,
-		AGBB = 0x1A,
-		AGBR = 0x1B,
-		AGRA = 0x1C,
-		AGRG = 0x1D,
-		AGRB = 0x1E,
-		AGRR = 0x1F,
-		ABAA = 0x20,
-		ABAG = 0x21,
-		ABAB = 0x22,
-		ABAR = 0x23,
-		ABGA = 0x24,
-		ABGG = 0x25,
-		ABGB = 0x26,
-		ABGR = 0x27,
-		ABBA = 0x28,
-		ABBG = 0x29,
-		ABBB = 0x2A,
-		ABBR = 0x2B,
-		ABRA = 0x2C,
-		ABRG = 0x2D,
-		ABRB = 0x2E,
-		ABRR = 0x2F,
-		ARAA = 0x30,
-		ARAG = 0x31,
-		ARAB = 0x32,
-		ARAR = 0x33,
-		ARGA = 0x34,
-		ARGG = 0x35,
-		ARGB = 0x36,
-		ARGR = 0x37,
-		ARBA = 0x38,
-		ARBG = 0x39,
-		ARBB = 0x3A,
-		ARBR = 0x3B,
-		ARRA = 0x3C,
-		ARRG = 0x3D,
-		ARRB = 0x3E,
-		ARRR = 0x3F,
-		GAAA = 0x40,
-		GAAG = 0x41,
-		GAAB = 0x42,
-		GAAR = 0x43,
-		GAGA = 0x44,
-		GAGG = 0x45,
-		GAGB = 0x46,
-		GAGR = 0x47,
-		GABA = 0x48,
-		GABG = 0x49,
-		GABB = 0x4A,
-		GABR = 0x4B,
-		GARA = 0x4C,
-		GARG = 0x4D,
-		GARB = 0x4E,
-		GARR = 0x4F,
-		GGAA = 0x50,
-		GGAG = 0x51,
-		GGAB = 0x52,
-		GGAR = 0x53,
-		GGGA = 0x54,
-		GGGG = 0x55,
-		GGGB = 0x56,
-		GGGR = 0x57,
-		GGBA = 0x58,
-		GGBG = 0x59,
-		GGBB = 0x5A,
-		GGBR = 0x5B,
-		GGRA = 0x5C,
-		GGRG = 0x5D,
-		GGRB = 0x5E,
-		GGRR = 0x5F,
-		GBAA = 0x60,
-		GBAG = 0x61,
-		GBAB = 0x62,
-		GBAR = 0x63,
-		GBGA = 0x64,
-		GBGG = 0x65,
-		GBGB = 0x66,
-		GBGR = 0x67,
-		GBBA = 0x68,
-		GBBG = 0x69,
-		GBBB = 0x6A,
-		GBBR = 0x6B,
-		GBRA = 0x6C,
-		GBRG = 0x6D,
-		GBRB = 0x6E,
-		GBRR = 0x6F,
-		GRAA = 0x70,
-		GRAG = 0x71,
-		GRAB = 0x72,
-		GRAR = 0x73,
-		GRGA = 0x74,
-		GRGG = 0x75,
-		GRGB = 0x76,
-		GRGR = 0x77,
-		GRBA = 0x78,
-		GRBG = 0x79,
-		GRBB = 0x7A,
-		GRBR = 0x7B,
-		GRRA = 0x7C,
-		GRRG = 0x7D,
-		GRRB = 0x7E,
-		GRRR = 0x7F,
-		BAAA = 0x80,
-		BAAG = 0x81,
-		BAAB = 0x82,
-		BAAR = 0x83,
-		BAGA = 0x84,
-		BAGG = 0x85,
-		BAGB = 0x86,
-		BAGR = 0x87,
-		BABA = 0x88,
-		BABG = 0x89,
-		BABB = 0x8A,
-		BABR = 0x8B,
-		BARA = 0x8C,
-		BARG = 0x8D,
-		BARB = 0x8E,
-		BARR = 0x8F,
-		BGAA = 0x90,
-		BGAG = 0x91,
-		BGAB = 0x92,
-		BGAR = 0x93,
-		BGGA = 0x94,
-		BGGG = 0x95,
-		BGGB = 0x96,
-		BGGR = 0x97,
-		BGBA = 0x98,
-		BGBG = 0x99,
-		BGBB = 0x9A,
-		BGBR = 0x9B,
-		BGRA = 0x9C,
-		BGRG = 0x9D,
-		BGRB = 0x9E,
-		BGRR = 0x9F,
-		BBAA = 0xA0,
-		BBAG = 0xA1,
-		BBAB = 0xA2,
-		BBAR = 0xA3,
-		BBGA = 0xA4,
-		BBGG = 0xA5,
-		BBGB = 0xA6,
-		BBGR = 0xA7,
-		BBBA = 0xA8,
-		BBBG = 0xA9,
-		BBBB = 0xAA,
-		BBBR = 0xAB,
-		BBRA = 0xAC,
-		BBRG = 0xAD,
-		BBRB = 0xAE,
-		BBRR = 0xAF,
-		BRAA = 0xB0,
-		BRAG = 0xB1,
-		BRAB = 0xB2,
-		BRAR = 0xB3,
-		BRGA = 0xB4,
-		BRGG = 0xB5,
-		BRGB = 0xB6,
-		BRGR = 0xB7,
-		BRBA = 0xB8,
-		BRBG = 0xB9,
-		BRBB = 0xBA,
-		BRBR = 0xBB,
-		BRRA = 0xBC,
-		BRRG = 0xBD,
-		BRRB = 0xBE,
-		BRRR = 0xBF,
-		RAAA = 0xC0,
-		RAAG = 0xC1,
-		RAAB = 0xC2,
-		RAAR = 0xC3,
-		RAGA = 0xC4,
-		RAGG = 0xC5,
-		RAGB = 0xC6,
-		RAGR = 0xC7,
-		RABA = 0xC8,
-		RABG = 0xC9,
-		RABB = 0xCA,
-		RABR = 0xCB,
-		RARA = 0xCC,
-		RARG = 0xCD,
-		RARB = 0xCE,
-		RARR = 0xCF,
-		RGAA = 0xD0,
-		RGAG = 0xD1,
-		RGAB = 0xD2,
-		RGAR = 0xD3,
-		RGGA = 0xD4,
-		RGGG = 0xD5,
-		RGGB = 0xD6,
-		RGGR = 0xD7,
-		RGBA = 0xD8,
-		RGBG = 0xD9,
-		RGBB = 0xDA,
-		RGBR = 0xDB,
-		RGRA = 0xDC,
-		RGRG = 0xDD,
-		RGRB = 0xDE,
-		RGRR = 0xDF,
-		RBAA = 0xE0,
-		RBAG = 0xE1,
-		RBAB = 0xE2,
-		RBAR = 0xE3,
-		RBGA = 0xE4,
-		RBGG = 0xE5,
-		RBGB = 0xE6,
-		RBGR = 0xE7,
-		RBBA = 0xE8,
-		RBBG = 0xE9,
-		RBBB = 0xEA,
-		RBBR = 0xEB,
-		RBRA = 0xEC,
-		RBRG = 0xED,
-		RBRB = 0xEE,
-		RBRR = 0xEF,
-		RRAA = 0xF0,
-		RRAG = 0xF1,
-		RRAB = 0xF2,
-		RRAR = 0xF3,
-		RRGA = 0xF4,
-		RRGG = 0xF5,
-		RRGB = 0xF6,
-		RRGR = 0xF7,
-		RRBA = 0xF8,
-		RRBG = 0xF9,
-		RRBB = 0xFA,
-		RRBR = 0xFB,
-		RRRA = 0xFC,
-		RRRG = 0xFD,
-		RRRB = 0xFE,
-		RRRR = 0xFF,
-	};*/
 }
+
+
+//////////////////////////////////////////////////////////////////////////////
+///  @}
+//////////////////////////////////////////////////////////////////////////////

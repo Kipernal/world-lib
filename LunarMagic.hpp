@@ -1,24 +1,67 @@
 ﻿#pragma once
 
+//////////////////////////////////////////////////////////////////////////////
+/// \file LunarMagic.hpp
+/// \brief Contains various functions for working with Lunar Magic hacks
+///
+/// \addtogroup LunarMagic
+///  @{
+//////////////////////////////////////////////////////////////////////////////
+
 namespace worldlib
 {
 
-	// Returns true if this library's version matches Lunar Magic's version.
-	// If it returns false, you should warn the user about possible data corruption if you use any features that require compliance with hardcoded LM values.
+	////////////////////////////////////////////////////////////
+	/// \ingroup LunarMagic
+	/// \brief Returns true if the library's version matches Lunar Magic's version.  If it returns false, you should warn the user about possible data corruption if you use any features that require compliance with hardcoded LM values.
+	///
+	/// \param romStart		An iterator pointing to the start of the ROM data
+	/// \param romEnd		An iterator pointing to the end of the ROM data
+	///
+	/// \return True if the library is guaranteed to work with the version of Lunar Magic the user is using.
+	///
+	/// \throws std::runtime_error If the ROM did not contain this data (e.g. via invalid pointers or the ROM being cut-off partway through level data or something else weird like that)
+	///
+	////////////////////////////////////////////////////////////
 	template <typename inputIteratorType>
 	bool checkROMVersion(inputIteratorType romStart, inputIteratorType romEnd);
-
-	// Returns true if the ROM has been modified with Lunar Magic and expanded.
-	// Generally you'll want to bail out if this returns false, as most functions won't work unless Lunar Magic's applied its hacks to the ROM.
+	
+	////////////////////////////////////////////////////////////
+	/// \ingroup LunarMagic
+	/// \brief Returns true if the ROM has been modified by Lunar Magic and expanded.
+	///
+	/// \param romStart		An iterator pointing to the start of the ROM data
+	/// \param romEnd		An iterator pointing to the end of the ROM data
+	///
+	/// \return True if the ROM has been modified by Lunar Magic and expanded.
+	///
+	/// \throws std::runtime_error If the ROM did not contain this data (e.g. via invalid pointers or the ROM being cut-off partway through level data or something else weird like that)
+	///
+	////////////////////////////////////////////////////////////
 	template <typename inputIteratorType>
 	bool checkROMModified(inputIteratorType romStart, inputIteratorType romEnd);
 
-	// Returns the current tag Lunar Magic uses on the ROM.  General format seems to be:
-	// "Lunar Magic Version 2.21 Public ©2013 FuSoYa, Defender of Relm http://fusoya.eludevisibility.org                                "
-	// Probably won't need to use this, since checkROMModified and checkROMVersion should provide the same functionality.
+	////////////////////////////////////////////////////////////
+	/// \ingroup LunarMagic
+	/// \brief Gets the string Lunar Magic inserts into the ROM as an identifier.  General format seems to be "Lunar Magic Version 2.21 Public ©2013 FuSoYa, Defender of Relm http://fusoya.eludevisibility.org                                ".  Probably won't need to use this, since checkROMModified and checkROMVersion should provide the same functionality.
+	///
+	/// \param romStart		An iterator pointing to the start of the ROM data
+	/// \param romEnd		An iterator pointing to the end of the ROM data
+	/// \param out			Where to send the data
+	///
+	/// \return Iterator pointing to the end of your string data
+	///
+	/// \throws std::runtime_error If the ROM did not contain this data (e.g. via invalid pointers or the ROM being cut-off partway through level data or something else weird like that)
+	///
+	////////////////////////////////////////////////////////////
 	template <typename inputIteratorType, typename outputIteratorType>
 	outputIteratorType getLunarMagicString(inputIteratorType romStart, inputIteratorType romEnd, outputIteratorType out);
 
 }
 
 #include "LunarMagic.inl"
+
+
+//////////////////////////////////////////////////////////////////////////////
+///  @}
+//////////////////////////////////////////////////////////////////////////////

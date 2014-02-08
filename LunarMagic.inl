@@ -27,9 +27,9 @@ namespace worldlib
 		std::string lmStr;
 
 		getLunarMagicString(romStart, romEnd, std::back_inserter(lmStr));
+		std::string wantStr = "LunarMagic";
 
-
-		return romSize >= 0x100000 && lmStr.substr(0, 0xB) == "Lunar Magic";
+		return romSize >= 0x100000 && lmStr.substr(0, 0xB) == wantStr;
 	}
 
 	template <typename inputIteratorType, typename outputIteratorType>

@@ -16,15 +16,15 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>CTP_Nov2013</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>CTP_Nov2013</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -64,6 +64,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="Patch.inl" />
     <None Include="Decompress.inl" />
     <None Include="Internal.inl" />
     <None Include="Level.inl" />
@@ -71,6 +72,8 @@
     <None Include="SFC.inl" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="asardll.hpp" />
+    <ClInclude Include="Patch.hpp" />
     <ClInclude Include="ColorBackInserter.hpp" />
     <ClInclude Include="Decompress.hpp" />
     <ClInclude Include="Internal.hpp" />

@@ -3,6 +3,7 @@
 *.vcsproj.user
 Debug
 Release
+latex
 
 
 

@@ -47,46 +47,6 @@ namespace worldlib
 			return readByteSFC(romStart, romEnd, levelAddress + byteNumber);
 		}
 
-		template <typename inputIteratorType> std::uint8_t readBytePC(inputIteratorType romStart, inputIteratorType romEnd, int offset)
-		{
-			std::advance(romStart, offset);
-			if (romStart >= romEnd)
-				throw std::runtime_error("Address is out of bounds for the current ROM.");
-			return *romStart;
-		}
-
-		template <typename inputIteratorType> std::uint16_t readWordPC(inputIteratorType romStart, inputIteratorType romEnd, int offset)
-		{
-			auto byte1 = readBytePC(romStart, romEnd, offset + 0);
-			auto byte2 = readBytePC(romStart, romEnd, offset + 1);
-
-			return (byte2 << 8) | byte1;
-		}
-
-		template <typename inputIteratorType> std::uint32_t readTrivigintetPC(inputIteratorType romStart, inputIteratorType romEnd, int offset)
-		{
-			auto byte1 = readBytePC(romStart, romEnd, offset + 0);
-			auto byte2 = readBytePC(romStart, romEnd, offset + 1);
-			auto byte3 = readBytePC(romStart, romEnd, offset + 2);
-
-			return (byte3 << 16) | (byte2 << 8) | byte1;
-		}
-
-
-		template <typename inputIteratorType> std::uint8_t readByteSFC(inputIteratorType romStart, inputIteratorType romEnd, int offset)
-		{
-			return readBytePC(romStart, romEnd, SFCToPC(romStart, romEnd, offset));
-		}
-
-		template <typename inputIteratorType> std::uint16_t readWordSFC(inputIteratorType romStart, inputIteratorType romEnd, int offset)
-		{
-			return readWordPC(romStart, romEnd, SFCToPC(romStart, romEnd, offset));
-		}
-
-		template <typename inputIteratorType> std::uint32_t readTrivigintetSFC(inputIteratorType romStart, inputIteratorType romEnd, int offset)
-		{
-			return readTrivigintetPC(romStart, romEnd, SFCToPC(romStart, romEnd, offset));
-		}
 
 		template <typename integerType, typename maskType> integerType getBits(integerType integer, maskType mask)
 		{

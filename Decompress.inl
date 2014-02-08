@@ -138,12 +138,6 @@ outputIteratorType decompressLZ2(inputIteratorType start, inputIteratorType end,
 	return out;
 }
 
-inline std::vector<unsigned char> decompressLZ2(std::vector<unsigned char> compressedData, int offset, int *compressedSize, int *decompressedSize)
-{
-	std::vector<unsigned char> ret;
-	decompressLZ2(compressedData.begin() + offset, compressedData.end(), std::back_inserter(ret), compressedSize, decompressedSize);
-	return ret;
-}
 
 
 template <typename inputIteratorType, typename outputIteratorType>
@@ -274,13 +268,6 @@ outputIteratorType decompressLZ3(inputIteratorType start, inputIteratorType end,
 		*decompressedSize = resultBuffer.size();
 
 	return out;
-}
-
-inline std::vector<unsigned char> decompressLZ3(std::vector<unsigned char> compressedData, int offset, int *compressedSize, int *decompressedSize)
-{
-	std::vector<unsigned char> ret;
-	decompressLZ3(compressedData.begin() + offset, compressedData.end(), std::back_inserter(ret), compressedSize, decompressedSize);
-	return ret;
 }
 
 

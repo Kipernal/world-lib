@@ -7,10 +7,17 @@ namespace worldlib
 	template <typename inputIteratorType>
 	bool romUsesSA1(inputIteratorType romStart, inputIteratorType romEnd)
 	{
-		if (romStart + 0x7FD5 >= romEnd) throw std::runtime_error("ROM is too small!");
-		return *(romStart + 0x7FD5) == 23;						// Behold the only place a PC address is ever used.
-	}
+		auto mapBytePos = romStart;
+		auto romBytePos = romStart;
+		std::advance(mapBytePos, 0x7FD5);
+		std::advance(romBytePos, 0x7FD6);
+		if (romBytePos >= romEnd) throw std::runtime_error("ROM is too small!");
 
+		// Behold the only place PC addresses are ever used (probably).
+		unsigned char mapByte = *(mapBytePos);
+		unsigned char romByte = *(romBytePos);
+		return mapByte == 0x23 && (romByte == 0x32 || romByte == 0x34 || romByte == 0x35);
+	}
 
 	template <typename inputIteratorType>
 	inline int SFCToPC(inputIteratorType romStart, inputIteratorType romEnd, int addr)
@@ -31,9 +38,9 @@ namespace worldlib
 	inline int PCToSFC(inputIteratorType romStart, inputIteratorType romEnd, int addr)
 	{
 		if (addr < 0 || addr >= 0x400000)
-			throw std::runtime_error("PC address cannot be mapped to an SFC one.")
+			throw std::runtime_error("PC address cannot be mapped to an SFC one.");
 
-			addr = ((addr << 1) & 0x7F0000) | (addr & 0x7FFF) | 0x8000;
+		addr = ((addr << 1) & 0x7F0000) | (addr & 0x7FFF) | 0x8000;
 
 		if ((addr & 0xF00000) == 0x700000)
 			addr |= 0x800000;
@@ -67,4 +74,48 @@ namespace worldlib
 
 		return (b << 10) | (g << 5) | (r << 0);
 	}
+
+
+
+	template <typename inputIteratorType> std::uint8_t readBytePC(inputIteratorType romStart, inputIteratorType romEnd, int offset)
+	{
+		std::advance(romStart, offset);
+		if (romStart >= romEnd)
+			throw std::runtime_error("Address is out of bounds for the current ROM.");
+		return *romStart;
+	}
+
+	template <typename inputIteratorType> std::uint16_t readWordPC(inputIteratorType romStart, inputIteratorType romEnd, int offset)
+	{
+		auto byte1 = readBytePC(romStart, romEnd, offset + 0);
+		auto byte2 = readBytePC(romStart, romEnd, offset + 1);
+
+		return (byte2 << 8) | byte1;
+	}
+
+	template <typename inputIteratorType> std::uint32_t readTrivigintetPC(inputIteratorType romStart, inputIteratorType romEnd, int offset)
+	{
+		auto byte1 = readBytePC(romStart, romEnd, offset + 0);
+		auto byte2 = readBytePC(romStart, romEnd, offset + 1);
+		auto byte3 = readBytePC(romStart, romEnd, offset + 2);
+
+		return (byte3 << 16) | (byte2 << 8) | byte1;
+	}
+
+
+	template <typename inputIteratorType> std::uint8_t readByteSFC(inputIteratorType romStart, inputIteratorType romEnd, int offset)
+	{
+		return readBytePC(romStart, romEnd, SFCToPC(romStart, romEnd, offset));
+	}
+
+	template <typename inputIteratorType> std::uint16_t readWordSFC(inputIteratorType romStart, inputIteratorType romEnd, int offset)
+	{
+		return readWordPC(romStart, romEnd, SFCToPC(romStart, romEnd, offset));
+	}
+
+	template <typename inputIteratorType> std::uint32_t readTrivigintetSFC(inputIteratorType romStart, inputIteratorType romEnd, int offset)
+	{
+		return readTrivigintetPC(romStart, romEnd, SFCToPC(romStart, romEnd, offset));
+	}
+
 }
