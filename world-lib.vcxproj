@@ -65,7 +65,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="Patch.inl" />
-    <None Include="Decompress.inl" />
+    <None Include="Compression.inl" />
     <None Include="Internal.inl" />
     <None Include="Level.inl" />
     <None Include="LunarMagic.inl" />
@@ -75,7 +75,7 @@
     <ClInclude Include="asardll.hpp" />
     <ClInclude Include="Patch.hpp" />
     <ClInclude Include="ColorBackInserter.hpp" />
-    <ClInclude Include="Decompress.hpp" />
+    <ClInclude Include="Compression.hpp" />
     <ClInclude Include="Internal.hpp" />
     <ClInclude Include="Level.hpp" />
     <ClInclude Include="LunarMagic.hpp" />

@@ -1,5 +1,5 @@
 #include "Internal.hpp"
-#include "Decompress.hpp"
+#include "Compression.hpp"
 
 namespace worldlib
 {
@@ -269,21 +269,7 @@ namespace worldlib
 	template <typename inputIteratorType, typename outputIteratorType>
 	outputIteratorType decompressGraphicsFile(inputIteratorType romStart, inputIteratorType romEnd, outputIteratorType out, int file, int *compressedSize, int *decompressedSize)
 	{
-		int address = getAddressOfGraphicsFile(romStart, romEnd, file);
-		if (address == -1) return out;
-
-		auto compressionType = readByteSFC(romStart, romEnd, internal::decompressionTypeLocation);
-
-		auto graphicsLocation = romStart;
-
-		std::advance(graphicsLocation, SFCToPC(romStart, romEnd, address));
-
-		if (compressionType == 0 || compressionType == 1)
-			return decompressLZ2(graphicsLocation, romEnd, out, compressedSize, decompressedSize);
-		else if (compressionType == 2)
-			return decompressLZ3(graphicsLocation, romEnd, out, compressedSize, decompressedSize);
-		else
-			throw std::runtime_error("Unrecognized compression format.");
+		return decompressData(romStart, romEnd, romStart + SFCToPC(romStart, romEnd, getAddressOfGraphicsFile(romStart, romEnd, file)), romEnd, out, compressedSize, decompressedSize);
 	}
 
 

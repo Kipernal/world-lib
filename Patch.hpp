@@ -3,6 +3,8 @@
 
 #pragma once
 
+// Patching functions all rely on the Asar DLL
+#ifndef WORLDLIB_IGNORE_DLL_FUNCTIONS
 
 namespace worldlib
 {
@@ -342,3 +344,4 @@ namespace worldlib
 #include "Patch.inl"
 
 
+#endif

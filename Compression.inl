@@ -4,6 +4,7 @@
 #include <limits>
 #include <cstdint>
 #include <algorithm>
+#include "Internal.hpp"
 
 #define _SFCLIB_INTEGER_ITERATOR_ASSERT(type) static_assert(std::numeric_limits<std::iterator_traits<type>::value_type>::is_integer == true, "The iterator type must have a value_type that is an integer.  8-bit integers recommended.")
 
@@ -270,5 +271,62 @@ outputIteratorType decompressLZ3(inputIteratorType start, inputIteratorType end,
 	return out;
 }
 
+template <typename romIteratorType, typename inputIteratorType, typename outputIteratorType>
+outputIteratorType decompressData(romIteratorType romStart, romIteratorType romEnd, inputIteratorType compressedDataStart, inputIteratorType compressedDataEnd, outputIteratorType out, int *compressedSize, int *decompressedSize)
+{
+	auto compressionType = readByteSFC(romStart, romEnd, internal::decompressionTypeLocation);
+
+	if (compressionType == 0 || compressionType == 1)
+		return decompressLZ2(compressedDataStart, compressedDataEnd, out, compressedSize, decompressedSize);
+	else if (compressionType == 2)
+		return decompressLZ3(compressedDataStart, compressedDataEnd, out, compressedSize, decompressedSize);
+	else
+		throw std::runtime_error("Unrecognized compression format.");
+}
+
+#ifndef WORLDLIB_IGNORE_DLL_FUNCTIONS
+namespace internal
+{
+	template <typename inputIteratorType, typename outputIteratorType>
+	outputIteratorType compressGeneral(inputIteratorType rawDataStart, inputIteratorType rawDataEnd, outputIteratorType out, int compressionType, int *compressedSize)
+	{
+		if (LunarLoadDLL() == false) throw std::runtime_error("Could not load Lunar Compress.dll");
+
+		char *raw = (char *)std::malloc(0x10000);
+		auto size = LunarRecompress(&*rawDataStart, raw, std::distance(rawDataStart, rawDataEnd), 0x10000, compressionType, 0);
+
+		if (size == 0) throw std::runtime_error("Could not compress the data for some reason.");
+
+		for (unsigned int i = 0; i < size; i++)*(out++) = raw[i];
+
+		if (compressedSize != nullptr) *compressedSize = size;
+
+		std::free(raw);
+
+		LunarUnloadDLL();
+
+		return out;
+	}
+}
+
+template <typename inputIteratorType, typename outputIteratorType>
+outputIteratorType compressLZ2(inputIteratorType rawDataStart, inputIteratorType rawDataEnd, outputIteratorType out, int *compressedSize)
+{
+	return internal::compressGeneral(rawDataStart, rawDataEnd, out, LC_LZ2, compressedSize);
+}
+
+template <typename inputIteratorType, typename outputIteratorType>
+outputIteratorType compressLZ3(inputIteratorType rawDataStart, inputIteratorType rawDataEnd, outputIteratorType out, int *compressedSize)
+{
+	return internal::compressGeneral(rawDataStart, rawDataEnd, out, LC_LZ3, compressedSize);
+}
+
+template <typename romIteratorType, typename inputIteratorType, typename outputIteratorType>
+outputIteratorType compressData(romIteratorType romStart, romIteratorType romEnd, inputIteratorType rawDataStart, inputIteratorType rawDataEnd, outputIteratorType out, int *compressedSize)
+{
+	return internal::compressGeneral(rawDataStart, rawDataEnd, out, LC_LZ3, compressedSize);
+}
+
+#endif
 
 }
