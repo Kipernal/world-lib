@@ -147,6 +147,8 @@ namespace worldlib
 	/// \brief Compresses data compressed in the compression format your ROM uses format.
 	/// \details Please note that this function requires Lunar Compress.dll.  See also compressData, which takes into account the ROM's current compression type.
 	///
+	/// \param romStart		An iterator pointing to the start of your ROM data
+	/// \param romEnd		An iterator pointing to the end of your ROM data
 	/// \param rawDataStart		An iterator pointing to the beginning of the raw data to compress
 	/// \param rawDataEnd		An iterator pointing to the end of the raw data to compress
 	/// \param out			Where to output the compressed data
