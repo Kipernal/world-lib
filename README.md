@@ -12,14 +12,16 @@ Also included are graphics decompression routines for the two standard methods S
 The library is designed to be simple enough to use but also sufficiently powerful.  Here's a quick example that loads a ROM and saves the graphics file used for level 105's SP1 as a PNG.  See world-lib-net as well, which wraps most world-lib functions.
 
 ````C++
-using namespace worldlib;	// I am not advocating using using.  Just for the record.  But it makes things easier to read here.
+using namespace worldlib;	// I am not advocating using using.  Just for the record.  
+				// But it makes things easier to read here.
 
 int main(int argc, char* argv[])
 {
 	// The following is an example that opens a ROM and outputs level 105's SP1 graphics as a bitmap.
 
 	// First we open the ROM as a vector.
-	// This library can work with almost datatype you want, from vectors to arrays to something insane like linked lists.
+	// This library can work with almost datatype you want, from vectors to arrays to something 
+	// insane like linked lists.
 	// This example will stick to vectors, though.
 
 	std::vector<unsigned char> rom;
@@ -61,14 +63,16 @@ int main(int argc, char* argv[])
 
 	// Now let's get the graphics slot used for SP1 in level 105
 	int sp1SlotNumber = getLevelSingleGraphicsSlot(romStart, romEnd, 0x0105, GFXSlots::SP1);
-	// Done.  sp1SlotNumber is probably 0 right now.  If the level uses ExGFX it could be something different.
+	// Done.  sp1SlotNumber is probably 0 right now.  If the level uses ExGFX it could be 
+	// something different.
 
 
 
 	// Now let's get and decompress that graphics file.
 	std::vector<unsigned char> sp1chr;
 	decompressGraphicsFile(romStart, romEnd, std::back_inserter(sp1chr), sp1SlotNumber);
-	// sp1chr now contains the decompressed graphics data, automatically decompressed using the ROM's compression format.
+	// sp1chr now contains the decompressed graphics data, automatically decompressed using 
+	// the ROM's compression format.
 
 
 
@@ -78,19 +82,22 @@ int main(int argc, char* argv[])
 	std::vector<unsigned char> sp1bmp;
 	int width = 0, height = 0;
 
-	indexedImageToBitmap(sp1chr.begin(), sp1chr.end(), 			// We need the graphics data
-			     palette.begin(), palette.end(),			// We need palette data
-			     0x10,						// Tiles per row (0x10 is usually always fine)
-			     4,							// The BPP (2 or 4.  Maybe 8 rarely)
-			     0xA,						// The palette row to use.  This is the "yellow sprite" palette.
+	indexedImageToBitmap(sp1chr.begin(), sp1chr.end(), 	// We need the graphics data
+			     palette.begin(), palette.end(),	// We need palette data
+			     0x10,				// Tiles per row (0x10 is usually always fine)
+			     4,					// The BPP (2 or 4.  Maybe 8 rarely)
+			     0xA,				// The palette row to use.  This is the "yellow sprite" palette.
 			     ColorBackInserter(sp1bmp, ColorOrder::RGBA),	// Like back_inserter, but lets you choose the order the colors are stored in.
-			     &width, &height);					// We'd like to know the dimensions of the resulting bitmap.
+			     &width, &height);			// We'd like to know the dimensions of the resulting bitmap.
 
 	// sp1bmp now contains a raw string of RGBA data for you to use however you want.  
 	// For example:
 	lodepng::encode("105 SP1 graphics.png", sp1bmp, width, height);
 	// That's an external library, obviously, but it shows what you can do with the data output.
 
+	
+	// And that's it!  There are more functions than just these, obviously.
+	// Also check out, for example, the patching functions, which you may find useful.
 }
 
 ````
