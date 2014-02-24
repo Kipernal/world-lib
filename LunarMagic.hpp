@@ -28,18 +28,19 @@ namespace worldlib
 	
 	////////////////////////////////////////////////////////////
 	/// \ingroup LunarMagic
-	/// \brief Returns true if the ROM has been modified by Lunar Magic and expanded.
+	/// \brief Tests if the library works on this version of the ROM
+	/// \details This means that the ROM has been modified by Lunar Magic, expanded, is a US ROM (i.e. not a Japanese or European ROM), and its title is "SUPER MARIOWORLD      ".
 	///
 	/// \param romStart		An iterator pointing to the start of the ROM data
 	/// \param romEnd		An iterator pointing to the end of the ROM data
 	///
-	/// \return True if the ROM has been modified by Lunar Magic and expanded.
+	/// \return True if the correct conditions apply
 	///
 	/// \throws std::runtime_error If the ROM did not contain this data (e.g. via invalid pointers or the ROM being cut-off partway through level data or something else weird like that)
 	///
 	////////////////////////////////////////////////////////////
 	template <typename inputIteratorType>
-	bool checkROMModified(inputIteratorType romStart, inputIteratorType romEnd);
+	bool checkROMValid(inputIteratorType romStart, inputIteratorType romEnd);
 
 	////////////////////////////////////////////////////////////
 	/// \ingroup LunarMagic

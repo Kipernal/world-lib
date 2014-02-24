@@ -20,16 +20,22 @@ namespace worldlib
 	}
 
 	template <typename inputIteratorType>
-	bool checkROMModified(inputIteratorType romStart, inputIteratorType romEnd)
+	bool checkROMValid(inputIteratorType romStart, inputIteratorType romEnd)
 	{
 		int romSize = std::distance(romStart, romEnd);
 
 		std::string lmStr;
 
 		getLunarMagicString(romStart, romEnd, std::back_inserter(lmStr));
-		std::string wantStr = "LunarMagic";
+		std::string wantStr = "Lunar Magic";
+		bool sizeIsGood = romSize >= 0x100000;
+		bool lunarMagicked = lmStr.substr(0, 0xB) == wantStr;
+		bool isUSROM = readByteSFC(romStart, romEnd, 0xFFD9) == 0x01;
+		std::string romTitle;
+		getROMTitle(romStart, romEnd, std::back_inserter(romTitle), true);
+		bool isSMW = romTitle == "SUPER MARIOWORLD";
 
-		return romSize >= 0x100000 && lmStr.substr(0, 0xB) == wantStr;
+		return sizeIsGood && lunarMagicked && isUSROM && isSMW;
 	}
 
 	template <typename inputIteratorType, typename outputIteratorType>

@@ -118,4 +118,42 @@ namespace worldlib
 		return readTrivigintetPC(romStart, romEnd, SFCToPC(romStart, romEnd, offset));
 	}
 
+	template <typename inputIteratorType, typename outputIteratorType> outputIteratorType getROMTitle(inputIteratorType romStart, inputIteratorType romEnd, outputIteratorType out, bool includeEndingSpaces)
+	{
+		std::string temp;
+		temp.reserve(0x16);
+		int lastNonSpaceIndex = 0;
+		for (int i = 0; i < 21; i++)
+		{
+			auto byte = readByteSFC(romStart, romEnd, 0xFFC0 + i);
+			temp += byte;
+			if (byte != ' ') lastNonSpaceIndex = i;
+		}
+
+		for (int i = 0; i <= lastNonSpaceIndex; i++)
+			*(out++) = temp[i];
+		
+		return out;
+	}
+
+	template <typename inputIteratorType> bool isROMHeadered(inputIteratorType dataStart, inputIteratorType dataEnd)
+	{
+		auto length = std::distance(dataStart, dataEnd);
+
+		if (length % 0x8000 == 0) return false;
+		if ((length - 0x200) % 0x800 == 0) return true;
+
+		throw std::runtime_error("Could not determine if the ROM was headered or not.");
+	}
+
+	template <typename inputIteratorType> inputIteratorType getROMStart(inputIteratorType dataStart, inputIteratorType dataEnd)
+	{
+		if (isROMHeadered(dataStart, dataEnd))
+		{
+			std::advance(dataStart, 0x200);
+			return dataStart;
+		}
+		else 
+			return dataStart;
+	}
 }

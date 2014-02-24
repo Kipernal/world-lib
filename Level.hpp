@@ -156,7 +156,7 @@ namespace worldlib
 	///
 	/// \return Iterator pointing to the end of your decompressed image data
 	///
-	/// \throws std::runtime_error If there is an error decompressing the data, such as a corrupted graphics file (see decompressLZ2 and decompressLZ3), if the ROM uses an unrecognized compression format, or if the ROM did not contain this data (e.g. via invalid pointers or the ROM being cut-off partway through level data or something else weird like that)
+	/// \throws std::runtime_error If there is an error decompressing the data, such as a corrupted graphics file (see decompressLZ2 and decompressLZ3), if the ROM uses an unrecognized compression format, or if the ROM did not contain this data (e.g. via invalid pointers or the ROM being cut-off partway through table data or something else weird like that)
 	///
 	/// \see decompressLZ2, decompressLZ3
 	///

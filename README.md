@@ -9,73 +9,88 @@ Includes functions mostly related to level data, for example, getting a level's 
 
 Also included are graphics decompression routines for the two standard methods SMW uses to compress graphics.
 
-The library is designed to be simple enough to use but also sufficiently powerful.  Here's a quick example that decompresses level 105's sprites graphics slots and saves them to a PNG:
+The library is designed to be simple enough to use but also sufficiently powerful.  Here's a quick example that loads a ROM and saves the graphics file used for level 105's SP1 as a PNG.  See world-lib-net as well, which wraps most world-lib functions.
 
 ````C++
+using namespace worldlib;	// I am not advocating using using.  Just for the record.  But it makes things easier to read here.
+
 int main(int argc, char* argv[])
 {
+	// The following is an example that opens a ROM and outputs level 105's SP1 graphics as a bitmap.
+
+	// First we open the ROM as a vector.
+	// This library can work with almost datatype you want, from vectors to arrays to something insane like linked lists.
+	// This example will stick to vectors, though.
+
 	std::vector<unsigned char> rom;
-
-	// Read in the ROM.
 	std::ifstream in("smw.smc", std::ios::in | std::ios::binary);
-	if (in) rom = std::vector<unsigned char>((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-	else return 0;
+	if (in)	rom = std::vector<unsigned char>((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+	else	return 0;
 
-	auto romStart = rom.begin() + 0x200;
+
+	// Just define some convenience variables.
+	// getROMStart gets the start of the ROM data regardless of whether or not it's headered.
+	auto romStart = getROMStart(rom.begin(), rom.end());
 	auto romEnd = rom.end();
 
-	// Get level 105's sprite graphics slots
-	int sp1 = worldlib::getLevelSingleGraphicsSlot(romStart, romEnd, 0x105, worldlib::ExgfxSlots::SP1);
-	int sp2 = worldlib::getLevelSingleGraphicsSlot(romStart, romEnd, 0x105, worldlib::ExgfxSlots::SP2);
-	int sp3 = worldlib::getLevelSingleGraphicsSlot(romStart, romEnd, 0x105, worldlib::ExgfxSlots::SP3);
-	int sp4 = worldlib::getLevelSingleGraphicsSlot(romStart, romEnd, 0x105, worldlib::ExgfxSlots::SP4);
 
-	// Get level 105's palette
+	// Make sure the ROM is valid for editing purposes.
+	// See the declaration for exactly what it checks.
+	if (checkROMValid(romStart, romEnd) == false) return 0;
+
+
+	// Now let's get level 105's palette as a vector.
+
 	std::vector<std::uint32_t> palette;
-	worldlib::getLevelPalette(romStart, romEnd, std::back_inserter(palette), 0x105);
+	getLevelPalette(romStart, romEnd, std::back_inserter(palette), 0x0105);
 
-	// Decompress those slots' graphics files
-	std::vector<unsigned char> sp1Chr, sp2Chr, sp3Chr, sp4Chr;
-	worldlib::decompressGraphicsFile(romStart, romEnd, std::back_inserter(sp1Chr), sp1);
-	worldlib::decompressGraphicsFile(romStart, romEnd, std::back_inserter(sp2Chr), sp2);
-	worldlib::decompressGraphicsFile(romStart, romEnd, std::back_inserter(sp3Chr), sp3);
-	worldlib::decompressGraphicsFile(romStart, romEnd, std::back_inserter(sp4Chr), sp4);
+	// std::back_inserter(palette) just tells the function how to insert data into the vector.
+	// Generally you'll want to use back_inserter with a vector on most outputs.
+	// This will save you the trouble of having to guess the right output buffer size.
+	// Either way, palette now has level 105's palette, minus the BG color.
+	// It doesn't matter if the palette is custom or not--it should always work as expected.
 
 
-	// Turn them from indexed, tiled data to normal ARGB bitmaps, and save them all in one bitmap.
-	std::vector<unsigned char> spriteBitmap;
-	int bitmapWidth, bitmapHeight;
-	int totalHeight = 0;
 
-	worldlib::indexedImageToBitmap(sp1Chr.begin(), sp1Chr.end(), palette.begin(), palette.end(), 0x10, 4, 0xA, worldlib::ColorBackInserter(spriteBitmap, worldlib::ColorOrder::RGBA), &bitmapWidth, &bitmapHeight);
+	// Now let's get the missing BG color.  Not necessary--just for fun.
+	std::uint32_t bgColor = getLevelBackgroundColor(romStart, romEnd, 0x0105);
+	// Pretty simple.
 
-	// It looks like a monster function, but that's just because it needs a lot of information about how to render the file.
-	// In order:	the start of the graphics file to decode,
-	//		the end of the graphics file to decode,
-	//		the start of the palette to use,
-	//		the end of the palette to use,
-	//		the number of tiles per row (generally just keep this at 16),
-	//		the bpp (usually 4),
-	//		the numerical palette to use (the one here is the "yellow" sprite palette),
-	//		the iterator to output the data to (this one lets you choose between 8-bit and 32-bit output),
-	//		the place to store the resulting bitmap's width to,
-	//		the place to store the resulting bitmap's height to.
 
-	// If you follow this format, it's pretty straightforward.
-	// There's also another version that just grabs a specific area of the bitmap, and a version that just grabs any number of specific tiles.
 
-  // Now just get the other 3 slots.  Each is appended to spriteBitmap by ColorBackInserter.
-	totalHeight += bitmapHeight;
-	worldlib::indexedImageToBitmap(sp2Chr.begin(), sp2Chr.end(), palette.begin(), palette.end(), 0x10, 4, 0xA, worldlib::ColorBackInserter(spriteBitmap, worldlib::ColorOrder::RGBA), &bitmapWidth, &bitmapHeight);
-	totalHeight += bitmapHeight;
-	worldlib::indexedImageToBitmap(sp3Chr.begin(), sp3Chr.end(), palette.begin(), palette.end(), 0x10, 4, 0xA, worldlib::ColorBackInserter(spriteBitmap, worldlib::ColorOrder::RGBA), &bitmapWidth, &bitmapHeight);
-	totalHeight += bitmapHeight;
-	worldlib::indexedImageToBitmap(sp4Chr.begin(), sp4Chr.end(), palette.begin(), palette.end(), 0x10, 4, 0xA, worldlib::ColorBackInserter(spriteBitmap, worldlib::ColorOrder::RGBA), &bitmapWidth, &bitmapHeight);
-	totalHeight += bitmapHeight;
 
-	// Now you have the image--you can do whatever you want with it.
-	
-  // (This is a separate library, obviously. Just for demonstration.)
-	lodepng::encode("105 sprite graphics.png", spriteBitmap, bitmapWidth, totalHeight);   
+	// Now let's get the graphics slot used for SP1 in level 105
+	int sp1SlotNumber = getLevelSingleGraphicsSlot(romStart, romEnd, 0x0105, GFXSlots::SP1);
+	// Done.  sp1SlotNumber is probably 0 right now.  If the level uses ExGFX it could be something different.
+
+
+
+	// Now let's get and decompress that graphics file.
+	std::vector<unsigned char> sp1chr;
+	decompressGraphicsFile(romStart, romEnd, std::back_inserter(sp1chr), sp1SlotNumber);
+	// sp1chr now contains the decompressed graphics data, automatically decompressed using the ROM's compression format.
+
+
+
+
+	// Now let's turn the indexed graphics into a normal RGBA bitmap.
+	// This function's kinda complicated, though. It needs a lot of information.
+	std::vector<unsigned char> sp1bmp;
+	int width = 0, height = 0;
+
+	indexedImageToBitmap(sp1chr.begin(), sp1chr.end(), 			// We need the graphics data
+			     palette.begin(), palette.end(),			// We need palette data
+			     0x10,						// Tiles per row (0x10 is usually always fine)
+			     4,							// The BPP (2 or 4.  Maybe 8 rarely)
+			     0xA,						// The palette row to use.  This is the "yellow sprite" palette.
+			     ColorBackInserter(sp1bmp, ColorOrder::RGBA),	// Like back_inserter, but lets you choose the order the colors are stored in.
+			     &width, &height);					// We'd like to know the dimensions of the resulting bitmap.
+
+	// sp1bmp now contains a raw string of RGBA data for you to use however you want.  
+	// For example:
+	lodepng::encode("105 SP1 graphics.png", sp1bmp, width, height);
+	// That's an external library, obviously, but it shows what you can do with the data output.
+
 }
+
 ````

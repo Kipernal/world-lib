@@ -15,9 +15,8 @@ namespace worldlib
 
 	////////////////////////////////////////////////////////////
 	/// \ingroup SFC
-	/// \brief Tests if the ROM uses the SA-1 chip.  Functions use this automatically when determining addresses so you probably won't need to use it manually.
-	///
-	/// \details Checks 0x7FD5 and 0x7FD6 as PC addresses for their SA-1 status.  Returns true for those addresses.  This is the only place where PC addressing is used. For this reason, this library is not compatible with HiROM.
+	/// \brief Tests if the ROM uses the SA-1 chip.  
+	/// \details Functions use this automatically when determining addresses so you probably won't need to use it manually. Checks 0x7FD5 and 0x7FD6 as PC addresses for their SA-1 status.  Returns true for those addresses.  This is the only place where PC addressing is used. For this reason, this library is not compatible with HiROM.
 	///
 	/// \param romStart		An iterator pointing to the start of the ROM data
 	/// \param romEnd		An iterator pointing to the end of the ROM data
@@ -95,6 +94,8 @@ namespace worldlib
 	///
 	/// \return A single byte
 	///
+	/// \throws std::runtime_error The address does not exist in the ROM.
+	///
 	////////////////////////////////////////////////////////////
 	template <typename inputIteratorType> std::uint8_t readBytePC(inputIteratorType romStart, inputIteratorType romEnd, int offset);
 
@@ -107,6 +108,8 @@ namespace worldlib
 	/// \param offset		The address to get the data from
 	///
 	/// \return A 16-bit value
+	///
+	/// \throws std::runtime_error The address does not exist in the ROM.
 	///
 	////////////////////////////////////////////////////////////
 	template <typename inputIteratorType> std::uint16_t readWordPC(inputIteratorType romStart, inputIteratorType romEnd, int offset);
@@ -121,6 +124,8 @@ namespace worldlib
 	///
 	/// \return A 24-bit value
 	///
+	/// \throws std::runtime_error The address does not exist in the ROM.
+	///
 	////////////////////////////////////////////////////////////
 	template <typename inputIteratorType> std::uint32_t readTrivigintetPC(inputIteratorType romStart, inputIteratorType romEnd, int offset);
 
@@ -133,6 +138,8 @@ namespace worldlib
 	/// \param offset		The address to get the data from
 	///
 	/// \return A single byte
+	///
+	/// \throws std::runtime_error The address given could not be converted a valid PC address, or the address does not exist in the ROM.
 	///
 	////////////////////////////////////////////////////////////
 	template <typename inputIteratorType> std::uint8_t readByteSFC(inputIteratorType romStart, inputIteratorType romEnd, int offset);
@@ -147,9 +154,11 @@ namespace worldlib
 	///
 	/// \return A 16-bit value
 	///
+	/// \throws std::runtime_error The address given could not be converted a valid PC address, or the address does not exist in the ROM.
+	///
 	////////////////////////////////////////////////////////////
 	template <typename inputIteratorType> std::uint16_t readWordSFC(inputIteratorType romStart, inputIteratorType romEnd, int offset);
-	
+
 	////////////////////////////////////////////////////////////
 	/// \ingroup SFC
 	/// \brief Get three bytes from an address in SFC format, correctly de-endianated.
@@ -160,8 +169,55 @@ namespace worldlib
 	///
 	/// \return A 24-bit value
 	///
+	/// \throws std::runtime_error The address given could not be converted a valid PC address, or the address does not exist in the ROM.
+	///
 	////////////////////////////////////////////////////////////
 	template <typename inputIteratorType> std::uint32_t readTrivigintetSFC(inputIteratorType romStart, inputIteratorType romEnd, int offset);
+
+	////////////////////////////////////////////////////////////
+	/// \ingroup SFC
+	/// \brief Returns the game's title in the ROM header (not 0x200 byte header at the start).
+	///
+	/// \param romStart		An iterator pointing to the start of the ROM data
+	/// \param romEnd		An iterator pointing to the end of the ROM data
+	/// \param includeEndingSpaces	If not set, then ending spaces will be trimmed.
+	///
+	/// \return The game's title from the ROM header
+	///
+	/// \throws std::runtime_error The data does not exist in the ROM for some reason (should never happen).
+	///
+	////////////////////////////////////////////////////////////
+	template <typename inputIteratorType, typename outputIteratorType> outputIteratorType getROMTitle(inputIteratorType romStart, inputIteratorType romEnd, outputIteratorType out, bool includeEndingSpaces);
+
+	////////////////////////////////////////////////////////////
+	/// \ingroup SFC
+	/// \brief Returns true if the ROM is headered.
+	///
+	/// \param dataStart		An iterator pointing to the start of the raw data that may or may not be headered.
+	/// \param dataEnd		An iterator pointing to the end of the raw data
+	///
+	/// \return True if the ROM is headered, false otherwise.
+	///
+	/// \throws std::runtime_error The ROM's size is not divisible by 0x8000, or the ROM's size minus 0x200 is not divisible by 0x8000.
+	///
+	////////////////////////////////////////////////////////////
+	template <typename inputIteratorType> bool isROMHeadered(inputIteratorType dataStart, inputIteratorType dataEnd);
+
+
+	////////////////////////////////////////////////////////////
+	/// \ingroup SFC
+	/// \brief Returns the start of the actual ROM data accounting for headers.
+	/// \details In other words, if the ROM is headered, this returns dataStart + 0x2000.  Otherwise, just dataStart.
+	///
+	/// \param dataStart		An iterator pointing to the start of the raw data that may or may not be headered.
+	/// \param dataEnd		An iterator pointing to the end of the raw data
+	///
+	/// \return The start of the actual ROM data.
+	///
+	/// \throws std::runtime_error The ROM's size is not divisible by 0x8000, or the ROM's size minus 0x200 is not divisible by 0x8000.
+	///
+	////////////////////////////////////////////////////////////
+	template <typename inputIteratorType> inputIteratorType getROMStart(inputIteratorType dataStart, inputIteratorType dataEnd);
 
 //////////////////////////////////////////////////////////////////////////////
 ///  @}
