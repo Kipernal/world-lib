@@ -82,13 +82,13 @@ int main(int argc, char* argv[])
 	std::vector<unsigned char> sp1bmp;
 	int width = 0, height = 0;
 
-	indexedImageToBitmap(sp1chr.begin(), sp1chr.end(), 	// We need the graphics data
-			     palette.begin(), palette.end(),	// We need palette data
-			     0x10,				// Tiles per row (0x10 is usually always fine)
-			     4,					// The BPP (2 or 4.  Maybe 8 rarely)
-			     0xA,				// The palette row to use.  This is the "yellow sprite" palette.
-			     ColorBackInserter(sp1bmp, ColorOrder::RGBA),	// Like back_inserter, but lets you choose the order the colors are stored in.
-			     &width, &height);			// We'd like to know the dimensions of the resulting bitmap.
+	indexedImageToBitmap(sp1chr.begin(), sp1chr.end(),   // We need the graphics data
+			     palette.begin(), palette.end(), // We need palette data
+			     0x10,                            // Tiles per row (0x10 is usually always fine)
+			     4,                               // The BPP (2 or 4.  Maybe 8 rarely)
+			     0xA,                             // The palette row to use.  This is the "yellow sprite" palette.
+			     ColorBackInserter(sp1bmp, ColorOrder::RGBA), // Like back_inserter, but lets you choose the order the colors are stored in.
+			     &width, &height);               // We'd like to know the dimensions of the resulting bitmap.
 
 	// sp1bmp now contains a raw string of RGBA data for you to use however you want.  
 	// For example:
